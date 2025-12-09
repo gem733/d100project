@@ -1,4 +1,3 @@
-import pytest
 from data._load_data import load_data
 
 def test_load_data():
