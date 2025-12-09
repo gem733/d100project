@@ -1,7 +1,7 @@
 import pandas as pd 
 from collections import Counter
 
-def tally_items(df, column_list):
+def tally_names(df, column_list):
     """
     Counts how often each item appears in a list column.
     
