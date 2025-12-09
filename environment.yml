@@ -4,6 +4,7 @@ dependencies:
   - numpy
   - pandas
   - scikit-learn
+  - jupyter
   - pip
   - pip:
       - pytest
