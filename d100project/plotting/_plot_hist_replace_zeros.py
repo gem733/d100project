@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 
-def plot_hist(df, column, bins='auto'):
+def plot_hist_replace_zeros(df, column, bins='auto'):
     """
     Plot the distribution of a column from a DataFrame.
     
