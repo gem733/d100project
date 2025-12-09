@@ -4,6 +4,8 @@ dependencies:
   - numpy
   - pandas
   - scikit-learn
+  - matplotlib
+  - seaborn
   - jupyter
   - pip
   - pip:
