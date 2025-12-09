@@ -1,4 +1,4 @@
-from data._load_data import load_data
+from d100project.data._load_data import load_data
 
 def test_load_data():
 
