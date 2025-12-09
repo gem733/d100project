@@ -1,11 +1,10 @@
-def dtype():
-    def describe_data(df):
+def dtype(df):
     """
-    Prints summary of the dataframe: dtypes, missing values, descriptive statistics
+    Prints the type of each column in the DataFrame
+
+    Args:
+        df (pd.DataFrame): The dataset to describe
     """
     print("===== Data Types =====")
-    print(df.dtypes)
-    print("\n===== Missing Values =====")
-    print(df.isnull().sum())
-    print("\n===== Descriptive Statistics =====")
-    display(df.describe()
+    for col in df.columns:
+        print(f"{col}: {df[col].dtype}")
