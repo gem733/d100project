@@ -13,6 +13,6 @@ def load_data():
     """
 
     
-    data_path = Path(__file__).parent/"data"/"movieds.csv"  # felxible path that is correct when run from anywhere
+    data_path = Path(__file__).parent/"movieds.csv"  # felxible path that is correct when run from anywhere
     df = pd.read_csv(data_path)
     return df
