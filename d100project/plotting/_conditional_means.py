@@ -33,6 +33,15 @@ def conditional_means(df, condition_col_list, target_col, top_n=20):
     top_items = freq.head(top_n).index.tolist()
 
     print(f"Conditional means of '{target_col}' for the top {top_n} most common items in '{condition_col_list}':")
+
+    means_list = []
     for item in top_items:
         mean_val = exploded.loc[exploded[condition_col_list] == item, target_col].mean()
-        print(f"{item}: {mean_val:.2f}")
+        means_list.append((item, mean_val))
+
+    # Sort by mean descending
+    means_list.sort(key=lambda x: x[1], reverse=True)
+
+    # Print with commas and 0 decimal places
+    for item, mean_val in means_list:
+        print(f"{item}: {mean_val:,.0f}")
