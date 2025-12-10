@@ -10,4 +10,4 @@ def count_empty_lists(dataframe, column):
     int: The count of empty lists in the specified column.
     """
     empty_list_count = dataframe[column + "_list"].apply(lambda x: isinstance(x, list) and len(x) == 0).sum()
-    print("Number of missing values:", empty_list_count)
+    print(f"Number of missing {column}: {empty_list_count}")
