@@ -10,5 +10,5 @@ def count_missing_values(df, column):
     Returns:
     int: The count of missing values in the specified column.
     """
-
+    print( f"Counting missing values and zeros in column: {column}" )
     return df[column].isnull().sum() + (df[column] == 0).sum()
