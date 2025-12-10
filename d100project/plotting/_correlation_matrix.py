@@ -17,6 +17,12 @@ def correlation_matrix(df, columns):
     for col in columns:
         if pd.api.types.is_datetime64_any_dtype(data[col]):
             data[col] = data[col].dt.year
+        # Optional: convert string-like dates to datetime first
+        elif pd.api.types.is_object_dtype(data[col]):
+            try:
+                data[col] = pd.to_datetime(data[col], errors='coerce').dt.year
+            except:
+                pass
 
     # Compute the correlation matrix
     corr = data.corr()
