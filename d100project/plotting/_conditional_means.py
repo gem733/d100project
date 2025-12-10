@@ -1,6 +1,6 @@
-def conditional_means(df, condition_col_list, target_col):
+def conditional_means(df, condition_col_list, target_col, top_n=20):
     """
-    Use the column containing lists, to work out the conditional means of another column, given each value in the list column, as well as the undoncitioned mean, and the mean for columns where the list is empty.
+    Use the column containing lists, to work out the conditional means of another column, given each value in the list column, as well as the undconitioned mean, and the mean for columns where the list is empty.
 
     Args:
         df (pd.DataFrame): The dataset
@@ -23,9 +23,16 @@ def conditional_means(df, condition_col_list, target_col):
     # Explode the list column to get individual condition values
     exploded = df.explode(condition_col_list)
 
-    # Calculate means for each unique condition value
-    for condition in exploded[condition_col_list].dropna().unique():
-        condition_mean = exploded[exploded[condition_col_list] == condition][target_col].mean()
-        means[condition] = condition_mean
+    # Drop rows where the exploded value is NaN
+    exploded = exploded[exploded[condition_col_list].notna()]
 
-    return means
+    # Count frequency of each item
+    freq = exploded[condition_col_list].value_counts()
+
+    # Limit to top N most common items
+    top_items = freq.head(top_n).index.tolist()
+
+    print(f"Conditional means of '{target_col}' for the top {top_n} most common items in '{condition_col_list}':")
+    for item in top_items:
+        mean_val = exploded.loc[exploded[condition_col_list] == item, target_col].mean()
+        print(f"{item}: {mean_val:.2f}")
