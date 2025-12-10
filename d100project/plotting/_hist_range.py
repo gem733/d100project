@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def plot_hist_range(df, column, bins='auto', min_value=None, max_value=None):
+def hist_range(df, column, bins='auto', min_value=None, max_value=None):
     """
     Plot the distribution of a numeric column from a DataFrame for values between given limits.
 
