@@ -30,20 +30,12 @@ def plot_hist_replace_zeros(df, column, bins='auto'):
     
     plt.figure(figsize=(8, 5))
     
-    if np.issubdtype(data.dtype, np.number):
-        # Numeric column → histogram
-        sns.histplot(data, bins=bins, kde=True, color='skyblue')
-        plt.xlabel(column)
-        plt.ylabel('Frequency')
-        plt.title(f'Distribution of {column} (Numeric)')
-    else:
-        # Categorical/object column → bar plot
-        counts = data.value_counts()
-        sns.barplot(x=counts.index, y=counts.values, palette='pastel')
-        plt.xlabel(column)
-        plt.ylabel('Count')
-        plt.title(f'Distribution of {column} (Categorical)')
-        plt.xticks(rotation=45, ha='right')
+
+    sns.histplot(data, bins=bins, kde=True, color='skyblue')
+    plt.xlabel(column)
+    plt.ylabel('Frequency')
+    plt.title(f'Distribution of {column} after replacing zeros with NaN')
+
     
     # Add number of dropped values below the plot
     plt.text(
