@@ -1,25 +1,19 @@
-import pandas as pd 
-from collections import Counter
-
-def tally_names(df, column_list):
+def tally_strings(df, column):
     """
-    Counts how often each item appears in a list column.
-    
+    Count how many times each FULL STRING appears in a column.
+
     Args:
         df (pd.DataFrame)
-        column_list (str): name of the list column
-    
+        column (str)
+
     Returns:
-        pd.DataFrame: table with item and count
+        pd.DataFrame: counts of each unique string
     """
-    all_items = []
-    for items in df[column_list]:
-        all_items.extend(items)
-    
-    counter = Counter(all_items)
-    
-    # Convert to a DataFrame and sort by count
-    tally_df = pd.DataFrame(counter.items(), columns=["Item", "Count"])
-    tally_df = tally_df.sort_values("Count", ascending=False).reset_index(drop=True)
-    
-    return tally_df
+    # Ensure everything is treated as a whole string
+    strings = df[column].dropna().astype(str)
+
+    # Use value_counts(), which counts whole strings correctly
+    tally = strings.value_counts().reset_index()
+
+    tally.columns = ["Value", "Count"]
+    return tally
