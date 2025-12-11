@@ -7,6 +7,7 @@ from d100project.cleaning._extract_dates import extract_dates
 from d100project.cleaning._replace_missing_values import replace_missing_values
 from d100project.eda._extract_name import extract_name
 from d100project.cleaning._remove_columns import remove_columns
+from d100project.cleaning._remove_unreleased import remove_unreleased
 
 def cleaned_data():
     """
@@ -36,14 +37,16 @@ def cleaned_data():
         # Extract names components from list
     df = extract_name(df, 'genres')
     df = extract_name(df, 'production_companies')  
-    df = extract_name(df, 'production_countries')  
-    df = extract_name(df, 'languages')  
+    df = extract_name(df, 'production_countries')   
     df = extract_name(df, 'spoken_languages')
 
+    # Remove unreleased movies
+    df = remove_unreleased(df)
+
     # Remove unnecessary columns
-    columns_to_remove = ['homepage', 'tagline', 'overview', 'status', 'release_date']
+    columns_to_remove = ['genres', 'homepage', 'tagline', 'overview', 'status', 'release_date', 'production_companies', 'production_countries', 'spoken_languages', 'keywords', 'original_title', 'popularity', 'title', 'vote_count', 'vote_average']
     df = remove_columns(df, columns_to_remove)
-    
+
     # Build the output path relative to this script's location
     script_dir = Path(__file__).resolve().parent
     output_path = script_dir.parent / 'data' / 'cleaned_data.parquet'

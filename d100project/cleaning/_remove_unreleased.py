@@ -1,4 +1,4 @@
-def _remove_unreleased(df):
+def remove_unreleased(df):
     """
     Remove rows where the 'status' column is not 'Released'.
 
