@@ -2,20 +2,19 @@ import numpy as np
 
 def replace_missing_values(df, column):
     """
-    Replace missing values, NaNs, and zero values in the dataset with mean.
+    Replace missing values, NaNs, and zero values in the dataset with mean, and create a new column indicating which values were replaced.
 
     Parameters:
-    data (list): A list of numerical values where some values may be None (missing).
-    replacement_value (int, float): The value to replace missing values with. Default is 0.
+    data (DataFrame): A list of numerical values where some values may be None (missing).
+    column (str): The name of the column to process.
 
     Returns:
-    list: A new list with missing values replaced.
+    Dataframe: a dataframe with missing values replaced and an indicator column.
     """
-    # Calculate the mean of the column excluding NaNs and zeros
-    mean_value = df[column][(df[column] != 0) & (df[column].notna())].mean()
-
-    # Replace NaNs and zeros with the calculated mean
-    df[column] = df[column].replace(0, np.nan)
-    df[column] = df[column].fillna(mean_value)
-
+    mean_value = df[column].replace(0, np.nan).mean()
+    indicator_column = f"{column}_was_missing"
+    
+    df[indicator_column] = df[column].isna() | (df[column] == 0)
+    df[column] = df[column].replace(0, np.nan).fillna(mean_value)
+    
     return df
