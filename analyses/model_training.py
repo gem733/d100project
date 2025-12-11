@@ -49,6 +49,14 @@ y_train = np.log1p(df_train['revenue'])
 X_test = df_test[all_features]
 y_test  = np.log1p(df_test['revenue'])
 
+# the number of dummy colums created by ListOneHotEncoder could lead to large overfitting for the linear model, I'll create another set of features without them.
+
+some_features = numeric_features + [month_feature]
+
+X_train_limited = df_train[some_features]
+X_test_limited = df_test[some_features]
+
+
 # Preprocessing pipelines for different feature types
 numeric_transformer = Pipeline(steps=[
     ('log_transform', LogTransformer()),
@@ -69,13 +77,25 @@ preprocessor = ColumnTransformer(
     ]
 )
 
-
+preprocessorlimited = ColumnTransformer(
+    transformers=[
+        ('log_numeric', LogTransformer(), ['budget']),
+        ('num', StandardScaler(), ['runtime','year']),
+        ('month', MonthToSeasonTransformer(month_column=month_feature), [month_feature])
+    ]
+)
 
 # Create the model pipelines
 
 # GLM
 GLMmodel = Pipeline(steps=[
     ('preprocessor', preprocessor),
+    ('regressor', LinearRegression())
+])
+
+# GLMlimited
+GLMlimitedmodel = Pipeline(steps=[
+    ('preprocessor', preprocessorlimited),
     ('regressor', LinearRegression())
 ])
 
@@ -87,6 +107,7 @@ LGBMmodel = Pipeline(steps=[
 
 # Train the models
 GLMmodel.fit(X_train, y_train)
+GLMlimitedmodel.fit(X_train_limited, y_train)
 LGBMmodel.fit(X_train, y_train)
 
 print("Training complete.")
@@ -95,6 +116,7 @@ print("Training complete.")
 # Predictions
 # ----------------------------
 y_pred_GLM = GLMmodel.predict(X_test)
+y_pred_GLM_limited = GLMlimitedmodel.predict(X_test_limited)
 y_pred_LGBM = LGBMmodel.predict(X_test)
 
 # ----------------------------
@@ -103,8 +125,12 @@ y_pred_LGBM = LGBMmodel.predict(X_test)
 mse_glm = mean_squared_error(y_test, y_pred_GLM)
 r2_glm = r2_score(y_test, y_pred_GLM)
 
+mse_glml = mean_squared_error(y_test, y_pred_GLM_limited)
+r2_glml = r2_score(y_test, y_pred_GLM_limited)
+
 mse_lgbm = mean_squared_error(y_test, y_pred_LGBM)
 r2_lgbm = r2_score(y_test, y_pred_LGBM)
 
 print(f"GLM - MSE: {mse_glm:.2f}, R^2: {r2_glm:.3f}")
+print(f"GLMlimited - MSE: {mse_glml:.2f}, R^2: {r2_glml:.3f}")
 print(f"LGBM - MSE: {mse_lgbm:.2f}, R^2: {r2_lgbm:.3f}")
