@@ -8,7 +8,7 @@ from d100project.cleaning._replace_missing_values import replace_missing_values
 
 def cleaned_data():
     """
-    Loads raw data, applies cleaning functions, and saves cleaned dataframe as a parquet file in the data folder.
+    Loads raw data, applies cleaning functions, and creates a parquet file in the data folder, which it saves the dataframe into.
 
     Args:
     df (DataFrame): The input DataFrame to be cleaned.
@@ -23,16 +23,23 @@ def cleaned_data():
     columns_to_check = ['revenue']  
     df = remove_missing_values(df, columns_to_check)
 
-    # Extract date features from a date column
-    df = extract_dates(df, 'release_date')
-
     # Replace missing values in specified columns
-    columns_to_replace = ['budget', 'runtime']
+    columns_to_replace = ['budget', 'runtime']  
     for column in columns_to_replace:
         df = replace_missing_values(df, column)
 
-    # Save cleaned data to parquet file
-    output_path = Path(__file__).parent/"data"/"cleaned_data.parquet"
-    df.to_parquet(output_path, index=False)
+    # Extract date components from a date column
+    df = extract_dates(df, 'release_date')  
+
+    # Build the output path relative to this script's location
+    script_dir = Path(__file__).resolve().parent
+    output_path = script_dir.parent / 'data' / 'cleaned_data.parquet'
+    output_path.parent.mkdir(parents=True, exist_ok=True)  # Ensure folder exists
+
+    # Save to Parquet
+    df.to_parquet(output_path, index=False, engine='fastparquet')
 
     return df
+
+if __name__ == "__main__":
+    cleaned_data()

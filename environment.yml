@@ -1,4 +1,6 @@
 name: d100projectenv
+channels:
+  - conda-forge
 dependencies:
   - python=3.12
   - numpy
@@ -10,3 +12,4 @@ dependencies:
   - pip
   - pip:
       - pytest
+      - fastparquet
