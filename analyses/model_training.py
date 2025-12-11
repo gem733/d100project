@@ -8,12 +8,13 @@ sys.path.insert(0, str(project_root))
 import pandas as pd
 import numpy as np
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
 from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.linear_model import ElasticNet
 
 import lightgbm as lgb
 
@@ -93,7 +94,6 @@ GLMmodel = Pipeline(steps=[
     ('regressor', LinearRegression())
 ])
 
-# GLMlimited
 GLMlimitedmodel = Pipeline(steps=[
     ('preprocessor', preprocessorlimited),
     ('regressor', LinearRegression())
