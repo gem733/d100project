@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 def scatter_plot(df, y_column, x_column):
     """
@@ -15,10 +16,15 @@ def scatter_plot(df, y_column, x_column):
     plt.xlabel(x_column, fontsize=14)
     plt.ylabel(y_column, fontsize=14)
 
-    # Fit and plot line of best fit
-    if df[x_column].dtype in ['int64', 'float64'] and df[y_column].dtype in ['int64', 'float64']:
-        m, b = np.polyfit(df[x_column].dropna(), df[y_column].dropna(), 1)
-        plt.plot(df[x_column], m*df[x_column] + b, color='red')
+    # Clean numeric data and drop NaNs
+    clean = df[[x_column, y_column]].apply(pd.to_numeric, errors='coerce').dropna()
+
+    # Fit line only if enough data exists
+    if len(clean) > 1:
+        x = clean[x_column]
+        y = clean[y_column]
+        m, b = np.polyfit(x, y, 1)
+        plt.plot(x, m*x + b, color='red')
 
     plt.tight_layout()
     plt.show()
