@@ -1,4 +1,4 @@
-def removing_missing_data(df, columns):
+def removing_missing_values(df, columns):
     """
     Remove rows with missing data, NaNs, and rows with zero in specified columns.
 
