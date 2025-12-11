@@ -1,3 +1,6 @@
+from sklearn.base import BaseEstimator, TransformerMixin
+import numpy as np
+
 class LogTransformer(BaseEstimator, TransformerMixin):
     """
     A transformer that applies the natural logarithm to specified numerical variables.
