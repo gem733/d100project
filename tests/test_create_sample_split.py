@@ -1,4 +1,4 @@
-from d100project.analyses._create_sample_split import create_sample_split
+from d100project.data._create_sample_split import create_sample_split
 import pandas as pd
 
 def test_create_sample_split():
