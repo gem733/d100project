@@ -1,16 +1,12 @@
 from d100project.analyses._create_sample_split import create_sample_split
 import pandas as pd
 
-def test_create_sample_split(df_movies):
+def test_create_sample_split():
 
     """
     Test that create_sample_split() creates a sample split correctly.
     """
-    # Create a simple DataFrame for testing
-    df_movies = pd.DataFrame({
-        "id": range(1, 101),  # 100 unique IDs
-        "revenue": [1000 + i*10 for i in range(100)]
-    })
+    df_movies = pd.read_parquet("d100project/data/cleaned_data.parquet")
 
     df_split = create_sample_split(df_movies, id_column="id", training_frac=0.8)
     
