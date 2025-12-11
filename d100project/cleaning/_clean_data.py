@@ -6,6 +6,7 @@ from d100project.cleaning._remove_missing_values import remove_missing_values
 from d100project.cleaning._extract_dates import extract_dates
 from d100project.cleaning._replace_missing_values import replace_missing_values
 from d100project.eda._extract_name import extract_name
+from d100project.cleaning._remove_columns import remove_columns
 
 def cleaned_data():
     """
@@ -39,6 +40,10 @@ def cleaned_data():
     df = extract_name(df, 'languages')  
     df = extract_name(df, 'spoken_languages')
 
+    # Remove unnecessary columns
+    columns_to_remove = ['homepage', 'tagline', 'overview', 'status', 'release_date']
+    df = remove_columns(df, columns_to_remove)
+    
     # Build the output path relative to this script's location
     script_dir = Path(__file__).resolve().parent
     output_path = script_dir.parent / 'data' / 'cleaned_data.parquet'
