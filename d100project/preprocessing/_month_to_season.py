@@ -17,7 +17,7 @@ class MonthToSeasonTransformer(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, X):
-        X_transformed = X.copy()
+        X = X.copy()
 
         season_mapping = {
             "Winter": [12, 1, 2],
@@ -28,12 +28,12 @@ class MonthToSeasonTransformer(BaseEstimator, TransformerMixin):
 
         # Create dummy variables
         for season, months in season_mapping.items():
-            X_transformed[f"{self.month_column}__{season}"] = \
-                X_transformed[self.month_column].apply(
+            X[f"{self.month_column}__{season}"] = \
+                X[self.month_column].apply(
                     lambda m: 1 if m in months else 0
                 )
 
         # Drop original month column
-        X_transformed.drop(columns=[self.month_column], inplace=True)
+        X.drop(columns=[self.month_column], inplace=True)
 
-        return X_transformed
+        return X
