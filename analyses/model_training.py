@@ -17,6 +17,8 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.linear_model import ElasticNet
 
 import lightgbm as lgb
+from lightgbm import early_stopping, log_evaluation
+from sklearn.model_selection import RandomizedSearchCV
 
 from d100project.preprocessing._log_transformer import LogTransformer
 from d100project.preprocessing._one_hot_encode import ListOneHotEncoder
@@ -78,7 +80,7 @@ preprocessor = ColumnTransformer(
     ]
 )
 
-preprocessorlimited = ColumnTransformer(
+preprocessor_limited = ColumnTransformer(
     transformers=[
         ('log_numeric', LogTransformer(), ['budget']),
         ('num', StandardScaler(), ['runtime','year']),
@@ -89,35 +91,90 @@ preprocessorlimited = ColumnTransformer(
 # Create the model pipelines
 
 # GLM
-GLMmodel = Pipeline(steps=[
-    ('preprocessor', preprocessor),
-    ('regressor', LinearRegression())
+GLM_pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor_limited), # using limited preprocessor to speed up training
+    ('regressor', ElasticNet(max_iter=10000))
 ])
 
-GLMlimitedmodel = Pipeline(steps=[
-    ('preprocessor', preprocessorlimited),
-    ('regressor', LinearRegression())
+GLM_limited_pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor_limited),
+    ('regressor', ElasticNet(max_iter=10000))
 ])
+
+# Hyperparameter grid for GLM
+glm_param_grid = {
+    'regressor__alpha': [0.01, 0.1, 1.0, 10.0],
+    'regressor__l1_ratio': [0.0, 0.5, 1.0]  # 0=Ridge, 1=Lasso
+}
+
+# Hyperparameter grid for GLM with a limited feature set
+glm_limited_param_grid = {
+    'regressor__alpha': [0.01, 0.1, 1.0, 10.0],
+    'regressor__l1_ratio': [0.0, 0.5, 1.0]  # 0=Ridge, 1=Lasso
+}
+
+# Hyperparameter grid for LightGBM
+lgb_param_grid = {
+    'regressor__learning_rate': [0.01, 0.05, 0.1],
+    'regressor__n_estimators': [100, 500, 1000],
+    'regressor__num_leaves': [31, 50],
+    'regressor__min_child_weight': [1, 5]
+}
+
+# GLM hyperparameter tuning
+glm_search = GridSearchCV(
+    estimator=GLM_pipeline,
+    param_grid=glm_limited_param_grid,
+    cv=5,
+    scoring='neg_mean_squared_error',  # MSE
+    n_jobs=-1
+)
+
+# GLM hyperparameter tuning for the limited feature set
+glm_limited_search = GridSearchCV(
+    estimator=GLM_pipeline,
+    param_grid=glm_limited_param_grid,
+    cv=5,
+    scoring='neg_mean_squared_error',  # MSE
+    n_jobs=-1
+)
 
 # LightGBM
-LGBMmodel = Pipeline(steps=[
+LGBM_pipeline = Pipeline(steps=[
     ('preprocessor', preprocessor),
-    ('regressor', lgb.LGBMRegressor(objective='regression', metric='mse'))
+    ('regressor', lgb.LGBMRegressor(objective='regression', n_estimators=5000))
 ])
 
-# Train the models
-GLMmodel.fit(X_train, y_train)
-GLMlimitedmodel.fit(X_train_limited, y_train)
-LGBMmodel.fit(X_train, y_train)
+lgb_search = RandomizedSearchCV(
+    estimator=LGBM_pipeline,
+    param_distributions=lgb_param_grid,
+    cv=3,
+    scoring="neg_mean_squared_error",
+    n_iter=10,
+    verbose=2,
+    n_jobs=-1
+)
+
+
+# Fit GLM with GridSearchCV
+glm_search.fit(X_train, y_train)
+print("Best GLM params:", glm_search.best_params_)
+
+glm_limited_search.fit(X_train, y_train)
+print("Best GLM params:", glm_search.best_params_)
+
+# Fit LGBM with GridSearchCV
+lgb_search.fit(X_train, y_train)
+print("Best LGBM params:", lgb_search.best_params_)
 
 print("Training complete.")
 
 # ----------------------------
 # Predictions
 # ----------------------------
-y_pred_GLM = GLMmodel.predict(X_test)
-y_pred_GLM_limited = GLMlimitedmodel.predict(X_test_limited)
-y_pred_LGBM = LGBMmodel.predict(X_test)
+y_pred_GLM = glm_search.best_estimator_.predict(X_test)
+y_pred_GLM_limited = glm_limited_search.best_estimator_.predict(X_test_limited)
+y_pred_LGBM = lgb_search.best_estimator_.predict(X_test)
 
 # ----------------------------
 # Evaluate MSE and R^2
