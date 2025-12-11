@@ -5,6 +5,7 @@ from d100project.data._load_data import load_data
 from d100project.cleaning._remove_missing_values import remove_missing_values
 from d100project.cleaning._extract_dates import extract_dates
 from d100project.cleaning._replace_missing_values import replace_missing_values
+from d100project.eda._extract_name import extract_name
 
 def cleaned_data():
     """
@@ -30,6 +31,13 @@ def cleaned_data():
 
     # Extract date components from a date column
     df = extract_dates(df, 'release_date')  
+
+        # Extract names components from list
+    df = extract_name(df, 'genres')
+    df = extract_name(df, 'production_companies')  
+    df = extract_name(df, 'production_countries')  
+    df = extract_name(df, 'languages')  
+    df = extract_name(df, 'spoken_languages')
 
     # Build the output path relative to this script's location
     script_dir = Path(__file__).resolve().parent
