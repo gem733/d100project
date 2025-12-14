@@ -35,6 +35,9 @@ df = load_cleaned_parquet()
 # Create train/test split column
 df = create_sample_split(df, id_column="id", training_frac=0.8)
 
+# create a column for ln(revenue)
+df['ln_revenue'] = np.log1p(df['revenue'])
+
 # training and testing dataframes
 df_train = df[df["sample"] == "train"].copy()
 df_test = df[df["sample"] == "test"].copy()
@@ -51,10 +54,10 @@ month_feature = "month"
 all_features = numeric_features + list_features + [month_feature] + high_cardinality + count_features
 
 X_train = df_train[all_features]
-y_train = np.log1p(df_train['revenue'])
+y_train = df_train['ln_revenue']
 
 X_test = df_test[all_features]
-y_test  = np.log1p(df_test['revenue'])
+y_test = df_test['ln_revenue']
 
 
 # Preprocessing pipelines for different feature types
@@ -182,3 +185,21 @@ r2_lgbm = r2_score(y_test, y_pred_LGBM)
 
 print(f"GLM - MSE: {mse_glm:.2f}, R^2: {r2_glm:.3f}")
 print(f"LGBM - MSE: {mse_lgbm:.2f}, R^2: {r2_lgbm:.3f}")
+
+# Save or replace predictions in test DataFrame
+if 'pred_glm' in df_test.columns:
+    df_test['pred_glm'] = y_pred_GLM  # replace existing
+else:
+    df_test['pred_glm'] = y_pred_GLM  # create new column
+
+if 'pred_lgbm' in df_test.columns:
+    df_test['pred_lgbm'] = y_pred_LGBM
+else:
+    df_test['pred_lgbm'] = y_pred_LGBM
+
+
+# Save the test DataFrame with predictions
+project_root = Path(__file__).resolve().parents[1]  # adjust if needed
+output_path = project_root / "d100project" / "evaluation" / "df_test_with_predictions.parquet"
+df_test.to_parquet(output_path, index=False)
+print(f"Saved test set with predictions to {output_path}")
