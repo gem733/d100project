@@ -44,6 +44,11 @@ def cleaned_data():
     df = extract_name(df, 'production_countries')   
     df = extract_name(df, 'spoken_languages')
 
+    # Create new features based on list lengths
+    df["n_production_companies"] = df["production_companies_list"].apply(len)
+    df["n_production_countries"] = df["production_countries_list"].apply(len)
+    df["n_spoken_languages"] = df["spoken_languages_list"].apply(len)
+
     # Remove unreleased movies
     df = remove_unreleased(df)
 

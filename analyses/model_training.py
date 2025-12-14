@@ -16,6 +16,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.linear_model import ElasticNet
 from sklearn.base import clone
+from category_encoders.target_encoder import TargetEncoder
 
 import lightgbm as lgb
 from lightgbm import early_stopping, log_evaluation
@@ -41,24 +42,19 @@ df_test = df[df["sample"] == "test"].copy()
 target = "revenue"
 
 numeric_features = ["budget", "runtime", "year"]
-log_transform_features = ["budget", "revenue"]
-list_features = ["original_language", "genres_list", "production_companies_list", "production_countries_list", "spoken_languages_list"]
+list_features = ["genres_list"]  # OHE only for genres
+high_cardinality = ["original_language"]  # target encoding
+count_features = ["n_production_companies", "n_production_countries", "n_spoken_languages"]
 month_feature = "month"
 
-all_features = numeric_features + list_features + [month_feature]
+
+all_features = numeric_features + list_features + [month_feature] + high_cardinality + count_features
 
 X_train = df_train[all_features]
 y_train = np.log1p(df_train['revenue'])
 
 X_test = df_test[all_features]
 y_test  = np.log1p(df_test['revenue'])
-
-# the number of dummy colums created by ListOneHotEncoder could lead to large overfitting for the linear model, I'll create another set of features without them.
-
-some_features = numeric_features + [month_feature]
-
-X_train_limited = df_train[some_features]
-X_test_limited = df_test[some_features]
 
 
 # Preprocessing pipelines for different feature types
@@ -84,13 +80,16 @@ preprocessor = ColumnTransformer(
     ]
 )
 
-preprocessor_limited = ColumnTransformer(
+preprocessor_lgbm = ColumnTransformer(
     transformers=[
-        ('log_numeric', LogTransformer(), ['budget']),
-        ('num', StandardScaler(), ['runtime','year']),
-        ('month', MonthToSeasonTransformer(month_column=month_feature), [month_feature])
+        ("log_budget", Pipeline([("log", LogTransformer())]), ["budget"]),
+        ("num", "passthrough", ["runtime", "year"] + count_features),
+        ("te", TargetEncoder(smoothing=10, min_samples_leaf=20), ["original_language"]),
+        ("genres", ListOneHotEncoder(columns=list_features), ["genres_list"]),
+        ("month", MonthToSeasonTransformer(month_column="month"), [month_feature])
     ]
 )
+
 
 # FIT PREPROCESSORS ONCE & TRANSFORM DATA BEFORE GRID SEARCH
 
@@ -98,16 +97,14 @@ preprocessor.fit(X_train)
 X_train_transformed = preprocessor.transform(X_train)
 X_test_transformed = preprocessor.transform(X_test)
 
-preprocessor_limited.fit(X_train_limited)
-X_train_limited_transformed = preprocessor_limited.transform(X_train_limited)
-X_test_limited_transformed = preprocessor_limited.transform(X_test_limited)
-
+preprocessor_lgbm.fit(X_train, y_train)
+X_train_lgbm = preprocessor_lgbm.transform(X_train)
+X_test_lgbm = preprocessor_lgbm.transform(X_test)
 
 # Create the model pipelines
 
 # GLM
 GLM_pipeline = ElasticNet(max_iter=10000)
-GLM_limited_pipeline = ElasticNet(max_iter=10000)
 
 # Hyperparameter grid for GLM
 glm_param_grid = {
@@ -115,11 +112,6 @@ glm_param_grid = {
     'l1_ratio': [0.0, 0.5, 1.0]  # 0=Ridge, 1=Lasso
 }
 
-# Hyperparameter grid for GLM with a limited feature set
-glm_limited_param_grid = {
-    'alpha': [0.01, 0.1, 1.0, 10.0],
-    'l1_ratio': [0.0, 0.5, 1.0]  # 0=Ridge, 1=Lasso
-}
 
 # Hyperparameter grid for LightGBM
 lgb_param_grid = {
@@ -133,14 +125,6 @@ lgb_param_grid = {
 glm_search = GridSearchCV(
     estimator=GLM_pipeline,
     param_grid=glm_param_grid,
-    cv=5,
-    scoring='neg_mean_squared_error',
-    n_jobs=-1
-)
-
-glm_limited_search = GridSearchCV(
-    estimator=GLM_limited_pipeline,
-    param_grid=glm_limited_param_grid,
     cv=5,
     scoring='neg_mean_squared_error',
     n_jobs=-1
@@ -165,11 +149,17 @@ lgb_search = RandomizedSearchCV(
 glm_search.fit(X_train_transformed, y_train)
 print("Best GLM params:", glm_search.best_params_)
 
-glm_limited_search.fit(X_train_limited_transformed, y_train)
-print("Best GLM params:", glm_search.best_params_)
-
 # Fit LGBM with GridSearchCV
-lgb_search.fit(X_train_transformed,y_train)
+lgb_search.fit(
+    X_train_lgbm,
+    y_train,
+    eval_set=[(X_test_lgbm, y_test)],
+    eval_metric="mse",
+    callbacks=[
+        early_stopping(stopping_rounds=100),
+        log_evaluation(100)
+    ]
+)
 print("Best LGBM params:", lgb_search.best_params_)
 
 print("Training complete.")
@@ -178,8 +168,7 @@ print("Training complete.")
 # Predictions
 # ----------------------------
 y_pred_GLM = glm_search.best_estimator_.predict(X_test_transformed)
-y_pred_GLM_limited = glm_limited_search.best_estimator_.predict(X_test_limited_transformed)
-y_pred_LGBM = lgb_search.best_estimator_.predict(X_test_transformed)
+y_pred_LGBM = lgb_search.best_estimator_.predict(X_test_lgbm)
 
 # ----------------------------
 # Evaluate MSE and R^2
@@ -187,12 +176,9 @@ y_pred_LGBM = lgb_search.best_estimator_.predict(X_test_transformed)
 mse_glm = mean_squared_error(y_test, y_pred_GLM)
 r2_glm = r2_score(y_test, y_pred_GLM)
 
-mse_glml = mean_squared_error(y_test, y_pred_GLM_limited)
-r2_glml = r2_score(y_test, y_pred_GLM_limited)
 
 mse_lgbm = mean_squared_error(y_test, y_pred_LGBM)
 r2_lgbm = r2_score(y_test, y_pred_LGBM)
 
 print(f"GLM - MSE: {mse_glm:.2f}, R^2: {r2_glm:.3f}")
-print(f"GLMlimited - MSE: {mse_glml:.2f}, R^2: {r2_glml:.3f}")
 print(f"LGBM - MSE: {mse_lgbm:.2f}, R^2: {r2_lgbm:.3f}")
