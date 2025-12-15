@@ -11,10 +11,10 @@ dependencies:
   - seaborn
   - jupyter
   - lightgbm
-  - pip
-  - pip:
-      - pytest
-      - fastparquet
-      - category-encoders
-      - dalex
-      - shap
+  - pytest
+  - fastparquet
+  - category-encoders
+  - dalex
+  - shap
+  - ipykernel
+  - pre-commit
