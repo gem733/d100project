@@ -1,28 +1,24 @@
 import sys
 from pathlib import Path
 
-# Determine project root dynamically (two levels up from analyses/)
-project_root = Path(__file__).resolve().parents[1]  # adjust if depth changes
+# Set up project root to allow me to import the model for evaluation
+project_root = Path(__file__).resolve().parents[1] 
 sys.path.insert(0, str(project_root))
 
-import pandas as pd
 import numpy as np
 from joblib import dump
 import shap
 
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.linear_model import ElasticNet
-from sklearn.base import clone
 from category_encoders.target_encoder import TargetEncoder
 
 import lightgbm as lgb
 from lightgbm import early_stopping, log_evaluation
-from sklearn.model_selection import RandomizedSearchCV
 
 from d100project.preprocessing._log_transformer import LogTransformer
 from d100project.preprocessing._one_hot_encode import ListOneHotEncoder
@@ -37,12 +33,15 @@ df = load_cleaned_parquet()
 # Create train/test split column
 df = create_sample_split(df, id_column="id", training_frac=0.8)
 
-# create a column for ln(revenue)
+# create a column for ln(revenue) to allow for evaluation later
 df['ln_revenue'] = np.log1p(df['revenue'])
 
 # training and testing dataframes
 df_train = df[df["sample"] == "train"].copy()
 df_test = df[df["sample"] == "test"].copy()
+
+
+# Define features and target
 
 target = "revenue"
 
@@ -52,8 +51,10 @@ high_cardinality = ["original_language"]  # target encoding
 count_features = ["n_production_companies", "n_production_countries", "n_spoken_languages"]
 month_feature = "month"
 
-
 all_features = numeric_features + list_features + [month_feature] + high_cardinality + count_features
+
+
+# split into X and y, and train/test
 
 X_train = df_train[all_features]
 y_train = df_train['ln_revenue']
@@ -63,6 +64,7 @@ y_test = df_test['ln_revenue']
 
 
 # Preprocessing pipelines for different feature types
+
 numeric_transformer = Pipeline(steps=[
     ('log_transform', LogTransformer()),
     ('scaler', StandardScaler())
@@ -96,7 +98,7 @@ preprocessor_lgbm = ColumnTransformer(
 )
 
 
-# FIT PREPROCESSORS ONCE & TRANSFORM DATA BEFORE GRID SEARCH
+# fit preprocessors and transform data
 
 preprocessor.fit(X_train)
 X_train_transformed = preprocessor.transform(X_train)
@@ -138,6 +140,7 @@ glm_search = GridSearchCV(
 # LightGBM
 LGBM_pipeline = lgb.LGBMRegressor(objective='regression', n_estimators=5000)
 
+# LGBM hyperparameter tuning
 
 lgb_search = RandomizedSearchCV(
     estimator=LGBM_pipeline,
@@ -167,17 +170,15 @@ lgb_search.fit(
 )
 print("Best LGBM params:", lgb_search.best_params_)
 
-print("Training complete.")
 
-# ----------------------------
 # Predictions
-# ----------------------------
+
 y_pred_GLM = glm_search.best_estimator_.predict(X_test_transformed)
 y_pred_LGBM = lgb_search.best_estimator_.predict(X_test_lgbm)
 
-# ----------------------------
+
 # Evaluate MSE and R^2
-# ----------------------------
+
 mse_glm = mean_squared_error(y_test, y_pred_GLM)
 r2_glm = r2_score(y_test, y_pred_GLM)
 
@@ -188,7 +189,9 @@ r2_lgbm = r2_score(y_test, y_pred_LGBM)
 print(f"GLM - MSE: {mse_glm:.2f}, R^2: {r2_glm:.3f}")
 print(f"LGBM - MSE: {mse_lgbm:.2f}, R^2: {r2_lgbm:.3f}")
 
+
 # Save or replace predictions in test DataFrame
+
 if 'pred_glm' in df_test.columns:
     df_test['pred_glm'] = y_pred_GLM  # replace existing
 else:
@@ -200,23 +203,23 @@ else:
     df_test['pred_lgbm'] = y_pred_LGBM
 
 
-# Save the test DataFrame with predictions
-project_root = Path(__file__).resolve().parents[1]  # adjust if needed
+# Save the test DataFrame with predictions for evaluation
+
+project_root = Path(__file__).resolve().parents[1]  
 output_path = project_root / "d100project" / "evaluation" / "df_test_with_predictions.parquet"
 df_test.to_parquet(output_path, index=False)
 print(f"Saved test set with predictions to {output_path}")
 
 
-# shap values computation and saving
+# Compute and save SHAP values
 
-project_root = Path(__file__).resolve().parents[1]  # adjust if needed
+project_root = Path(__file__).resolve().parents[1]  
 shap_output_folder = project_root / "d100project" / "evaluation"
 shap_output_folder.mkdir(exist_ok=True, parents=True)
 
-# -----------------------------
+
 # SHAP values computation for GLM
-# -----------------------------
-# LinearExplainer expects the transformed training data and your fitted GLM
+
 explainer_glm = shap.LinearExplainer(
     glm_search.best_estimator_,
     X_train_transformed,
@@ -224,17 +227,16 @@ explainer_glm = shap.LinearExplainer(
 )
 
 # Compute SHAP values for the test set
+
 shap_values_glm = explainer_glm.shap_values(X_test_transformed)
 
-# -----------------------------
-# Get feature names from the preprocessor
-# -----------------------------
-# This works even with nested pipelines
+
+# Get feature names from the preprocessor so we can save them alongside SHAP values
+
 feature_names = preprocessor.get_feature_names_out()
 
-# -----------------------------
+
 # Save SHAP values along with feature names
-# -----------------------------
 np.save(
     shap_output_folder / "shap_values_glm_with_names.npy",
     {"shap_values": shap_values_glm, "feature_names": feature_names}
@@ -242,9 +244,8 @@ np.save(
 
 print(f"GLM SHAP values with feature names saved to {shap_output_folder / 'shap_values_glm_with_names.npy'}")
 
-# -----------------------------
+
 # SHAP values computation for LGBM
-# -----------------------------
 explainer_lgbm = shap.TreeExplainer(lgb_search.best_estimator_)
 
 shap_values_lgbm = explainer_lgbm.shap_values(X_test_lgbm)
@@ -263,6 +264,7 @@ np.save(
 print("LGBM SHAP values with feature names saved.")
 
 
+# Save the trained models and preprocessors for PDPs
 project_root = Path(__file__).resolve().parents[1]
 evaluation_dir = project_root / "d100project" / "evaluation"
 evaluation_dir.mkdir(parents=True, exist_ok=True)
