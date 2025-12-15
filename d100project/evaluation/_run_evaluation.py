@@ -2,6 +2,8 @@ from _evaluate_predictions import evaluate_predictions
 from _load_predictions import load_predict_parquet
 import pandas as pd
 
+# This script runs evaluation on prediction results from parquet file
+
 df = load_predict_parquet()
 
 # Evaluate GLM

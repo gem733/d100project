@@ -1,4 +1,4 @@
-name: d100projectenv
+name: d100_project_movies_ds_env
 channels:
   - conda-forge
 dependencies:
