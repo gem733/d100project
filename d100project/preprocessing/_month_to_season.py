@@ -16,6 +16,13 @@ class MonthToSeasonTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         return self
 
+    def get_feature_names_out(self, input_features=None):
+    # Typically, this transformer outputs a single column
+        if input_features is None:
+            return ["month_season"]
+        else:
+            return [f"{f}_season" for f in input_features]
+
     def transform(self, X):
         X = X.copy()
 

@@ -7,6 +7,8 @@ sys.path.insert(0, str(project_root))
 
 import pandas as pd
 import numpy as np
+import joblib
+import shap
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.compose import ColumnTransformer
@@ -203,3 +205,59 @@ project_root = Path(__file__).resolve().parents[1]  # adjust if needed
 output_path = project_root / "d100project" / "evaluation" / "df_test_with_predictions.parquet"
 df_test.to_parquet(output_path, index=False)
 print(f"Saved test set with predictions to {output_path}")
+
+
+# shap values computation and saving
+
+project_root = Path(__file__).resolve().parents[1]  # adjust if needed
+shap_output_folder = project_root / "d100project" / "evaluation"
+shap_output_folder.mkdir(exist_ok=True, parents=True)
+
+# -----------------------------
+# SHAP values computation for GLM
+# -----------------------------
+# LinearExplainer expects the transformed training data and your fitted GLM
+explainer_glm = shap.LinearExplainer(
+    glm_search.best_estimator_,
+    X_train_transformed,
+    feature_perturbation="interventional"
+)
+
+# Compute SHAP values for the test set
+shap_values_glm = explainer_glm.shap_values(X_test_transformed)
+
+# -----------------------------
+# Get feature names from the preprocessor
+# -----------------------------
+# This works even with nested pipelines
+feature_names = preprocessor.get_feature_names_out()
+
+# -----------------------------
+# Save SHAP values along with feature names
+# -----------------------------
+np.save(
+    shap_output_folder / "shap_values_glm_with_names.npy",
+    {"shap_values": shap_values_glm, "feature_names": feature_names}
+)
+
+print(f"GLM SHAP values with feature names saved to {shap_output_folder / 'shap_values_glm_with_names.npy'}")
+
+# -----------------------------
+# SHAP values computation for LGBM
+# -----------------------------
+explainer_lgbm = shap.TreeExplainer(lgb_search.best_estimator_)
+
+shap_values_lgbm = explainer_lgbm.shap_values(X_test_lgbm)
+
+# Feature names from LGBM preprocessor
+feature_names_lgbm = preprocessor_lgbm.get_feature_names_out()
+
+np.save(
+    shap_output_folder / "shap_values_lgbm_with_names.npy",
+    {
+        "shap_values": shap_values_lgbm,
+        "feature_names": feature_names_lgbm
+    }
+)
+
+print("LGBM SHAP values with feature names saved.")

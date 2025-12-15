@@ -7,6 +7,11 @@ class LogTransformer(BaseEstimator, TransformerMixin):
 
     def fit(self, X, y=None):
         return self  # nothing to fit
+    
+    def get_feature_names_out(self, input_features=None):
+        if input_features is None:
+            raise ValueError("input_features must be provided for LogTransformer.")
+        return [f"{f}_log" for f in input_features]
 
     def transform(self, X):
         return np.log1p(X)  # X is an array

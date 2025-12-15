@@ -29,6 +29,13 @@ class ListOneHotEncoder(BaseEstimator, TransformerMixin):
             self.unique_items_[col] = sorted(unique_items)
 
         return self
+    
+    def get_feature_names_out(self, input_features=None):
+        output_features = []
+        for col in self.columns:
+            for item in self.unique_items_[col]:
+                output_features.append(f"{col}__{item}")
+        return output_features
 
     def transform(self, X):
         """
