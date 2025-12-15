@@ -38,7 +38,7 @@ def cleaned_data():
     # Extract date components from a date column
     df = extract_dates(df, 'release_date')  
 
-        # Extract names components from list
+    # Extract names components from list
     df = extract_name(df, 'genres')
     df = extract_name(df, 'production_companies')  
     df = extract_name(df, 'production_countries')   

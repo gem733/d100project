@@ -19,13 +19,13 @@ def plot_hist(df, column, bins='auto'):
     plt.figure(figsize=(8, 5))
     
     if np.issubdtype(data.dtype, np.number):
-        # Numeric column → histogram
+        # Numeric column: histogram
         sns.histplot(data, bins=bins, kde=True, color='skyblue')
         plt.xlabel(column)
         plt.ylabel('Frequency')
         plt.title(f'Distribution of {column} (Numeric)')
     else:
-        # Categorical/object column → bar plot
+        # Categorical/object column: bar plot
         counts = data.value_counts()
         sns.barplot(x=counts.index, y=counts.values, palette='pastel')
         plt.xlabel(column)

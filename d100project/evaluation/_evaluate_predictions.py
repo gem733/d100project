@@ -77,7 +77,7 @@ def lorenz_curve(y_true, y_pred, exposure):
     y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
     exposure = np.asarray(exposure)
 
-    # order samples by increasing predicted risk:
+    # order samples by increasing predicted revenue:
     ranking = np.argsort(y_pred)
     ranked_exposure = exposure[ranking]
     ranked_pure_premium = y_true[ranking]

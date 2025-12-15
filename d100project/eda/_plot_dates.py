@@ -4,6 +4,10 @@ import pandas as pd
 def plot_dates(df, column):
     """
     Plot a histogram of the distribution of dates (by year) in a DataFrame column.
+
+    Args:
+        df (pd.DataFrame): The dataset
+        column (str): Column name containing date values
     """
 
     # Convert to datetime safely
