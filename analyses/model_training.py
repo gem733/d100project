@@ -7,7 +7,7 @@ sys.path.insert(0, str(project_root))
 
 import pandas as pd
 import numpy as np
-import joblib
+from joblib import dump
 import shap
 
 from sklearn.model_selection import GridSearchCV
@@ -261,3 +261,13 @@ np.save(
 )
 
 print("LGBM SHAP values with feature names saved.")
+
+
+project_root = Path(__file__).resolve().parents[1]
+evaluation_dir = project_root / "d100project" / "evaluation"
+evaluation_dir.mkdir(parents=True, exist_ok=True)
+
+dump(lgb_search.best_estimator_, evaluation_dir / "lgbm_model.joblib")
+dump(preprocessor_lgbm, evaluation_dir / "lgbm_preprocessor.joblib")
+
+print("Saved LGBM model and preprocessor.")
