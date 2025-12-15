@@ -1,6 +1,7 @@
 name: d100_project_movies_ds_env
 channels:
   - conda-forge
+  - defaults
 dependencies:
   - python=3.12
   - numpy
@@ -12,8 +13,10 @@ dependencies:
   - lightgbm
   - pytest
   - fastparquet
-  - category-encoders
   - dalex
   - shap
   - ipykernel
   - pre-commit
+  - pip
+  - pip:
+      - category-encoders
