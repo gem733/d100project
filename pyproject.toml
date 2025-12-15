@@ -1,0 +1,24 @@
+[project]
+name = "d100_project_movies_ds"
+version = "0.1.0"
+description = "A data science project for movie analysis and modeling"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "python=3.12",
+  "numpy",
+  "pandas",
+  "scikit-learn",
+  "seaborn",
+  "jupyter",
+  "lightgbm",
+  "pytest",
+  "fastparquet",
+  "shap",
+  "dalex",
+  "ipykernel",
+  "pre-commit",
+  "pip",
+  pip:
+    "category-encoders"
+]
