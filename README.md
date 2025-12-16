@@ -13,6 +13,6 @@ I've used a kaggle dataset. Given it's relatively small size (roughly 20x5000), 
 
 To clean this data and save it as a parquet, please run \_clean_data.py which is in the cleaning folder in d100project.
 
-Then once you have created the cleaned parquet you will be able to run model_training.py in the analyses folder.
+Then once you have created the cleaned parquet you will be able to run the models in untuned_model_training.py and tuned_model_training.py in the analyses folder.
 
-Once you have run this script, you should be able to run the code in evaluation.ipynb
+Once you have run these scripts, you should be able to run the code in evaluation.ipynb

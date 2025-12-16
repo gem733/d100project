@@ -2,30 +2,27 @@ import sys
 from pathlib import Path
 
 # Set up project root to allow me to import the model for evaluation
-project_root = Path(__file__).resolve().parents[1] 
+project_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(project_root))
 
-import numpy as np
-from joblib import dump
-import shap
-
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
-from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.linear_model import ElasticNet
-from category_encoders.target_encoder import TargetEncoder
-
 import lightgbm as lgb
+import numpy as np
+import shap
+from category_encoders.target_encoder import TargetEncoder
+from joblib import dump
 from lightgbm import early_stopping, log_evaluation
-
-from d100project.preprocessing._log_transformer import LogTransformer
-from d100project.preprocessing._one_hot_encode import ListOneHotEncoder
-from d100project.preprocessing._month_to_season import MonthToSeasonTransformer
+from sklearn.compose import ColumnTransformer
+from sklearn.linear_model import ElasticNet
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from d100project.data._create_sample_split import create_sample_split
 from d100project.data._load_cleaned_parquet import load_cleaned_parquet
+from d100project.preprocessing._log_transformer import LogTransformer
+from d100project.preprocessing._month_to_season import MonthToSeasonTransformer
+from d100project.preprocessing._one_hot_encode import ListOneHotEncoder
 
 # Load cleaned data
 df = load_cleaned_parquet()
@@ -123,7 +120,7 @@ glm_param_grid = {
 # Hyperparameter grid for LightGBM
 lgb_param_grid = {
     'learning_rate': [0.01, 0.05, 0.1],
-    'n_estimators': [100, 500, 1000],
+    'n_estimators': [100, 500, 5000],
     'num_leaves': [31, 50],
     'min_child_weight': [1, 5]
 }
@@ -205,7 +202,7 @@ else:
 
 # Save the test DataFrame with predictions for evaluation
 
-project_root = Path(__file__).resolve().parents[1]  
+project_root = Path(__file__).resolve().parents[1]
 output_path = project_root / "d100project" / "evaluation" / "df_test_with_predictions.parquet"
 df_test.to_parquet(output_path, index=False)
 print(f"Saved test set with predictions to {output_path}")
@@ -213,7 +210,7 @@ print(f"Saved test set with predictions to {output_path}")
 
 # Compute and save SHAP values
 
-project_root = Path(__file__).resolve().parents[1]  
+project_root = Path(__file__).resolve().parents[1]
 shap_output_folder = project_root / "d100project" / "evaluation"
 shap_output_folder.mkdir(exist_ok=True, parents=True)
 
