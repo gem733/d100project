@@ -31,7 +31,7 @@ def plot_hist_replace_zeros(df, column, bins='auto'):
     plt.figure(figsize=(8, 5))
     
 
-    sns.histplot(data, bins=bins, kde=True, color='skyblue')
+    sns.histplot(data, bins=bins, kde=True, color='blue')
     plt.xlabel(column)
     plt.ylabel('Frequency')
     plt.title(f'Distribution of {column} after replacing zeros with NaN')
