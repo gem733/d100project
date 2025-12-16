@@ -1,5 +1,6 @@
 # i'm going to use the use the season of release as a feature, so I need to get a dummy variable for each season from the month
 from sklearn.base import BaseEstimator, TransformerMixin
+import pandas as pd
 
 class MonthToSeasonTransformer(BaseEstimator, TransformerMixin):
     """
@@ -10,37 +11,42 @@ class MonthToSeasonTransformer(BaseEstimator, TransformerMixin):
         - Summer: June (6), July (7), August (8)
         - Autumn: September (9), October (10), November (11)
     """
-    def __init__(self, month_column):
+    def __init__(self, month_column='month'):
         self.month_column = month_column
+        self.season_columns = ["season_spring", "season_summer", "season_fall", "season_winter"]
 
     def fit(self, X, y=None):
+        # Nothing to learn, just return self
         return self
 
-    def get_feature_names_out(self, input_features=None):
-    # Typically, this transformer outputs a single column
-        if input_features is None:
-            return ["month_season"]
-        else:
-            return [f"{f}_season" for f in input_features]
-
     def transform(self, X):
-        X = X.copy()
+        # Make a copy to avoid modifying original
+        X_ = X.copy()
 
-        season_mapping = {
-            "Winter": [12, 1, 2],
-            "Spring": [3, 4, 5],
-            "Summer": [6, 7, 8],
-            "Autumn": [9, 10, 11]
-        }
+        # Map months to season names
+        def month_to_season(month):
+            if month in [12, 1, 2]:
+                return "season_winter"
+            elif month in [3, 4, 5]:
+                return "season_spring"
+            elif month in [6, 7, 8]:
+                return "season_summer"
+            else:
+                return "season_fall"
 
-        # Create dummy variables
-        for season, months in season_mapping.items():
-            X[f"{self.month_column}__{season}"] = \
-                X[self.month_column].apply(
-                    lambda m: 1 if m in months else 0
-                )
+        # Convert month column to seasons
+        seasons = X_[self.month_column].apply(month_to_season)
 
-        # Drop original month column
-        X.drop(columns=[self.month_column], inplace=True)
+        # One-hot encode seasons
+        X_season = pd.get_dummies(seasons)
+        # Ensure all four columns exist
+        for col in self.season_columns:
+            if col not in X_season:
+                X_season[col] = 0
 
-        return X
+        # Return as numpy array
+        return X_season[self.season_columns].values
+
+    def get_feature_names_out(self, input_features=None):
+        # Return proper feature names for ColumnTransformer
+        return self.season_columns
