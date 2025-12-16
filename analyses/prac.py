@@ -40,21 +40,12 @@ df_test = df[df["sample"] == "test"].copy()
 target = "revenue"
 
 numeric_features = ["budget", "runtime", "year"]
-list_features = ["genres_list"]
-high_cardinality = ["original_language"]
 count_features = [
-    "n_production_companies",
-    "n_production_countries",
-    "n_spoken_languages",
-]
-month_feature = "month"
+    "n_production_companies"]
 indicators = ['runtime_was_missing', 'budget_was_missing']
 
 all_features = (
     numeric_features
-    + list_features
-    + [month_feature]
-    + high_cardinality
     + count_features
     + indicators
 )
@@ -70,8 +61,6 @@ preprocessor = ColumnTransformer(
     transformers=[
         ("log_budget", LogTransformer(), ["budget"]),
         ("num", StandardScaler(), ["runtime", "year"]),
-        ("genres", ListOneHotEncoder(columns=list_features), list_features),
-        ("month", MonthToSeasonTransformer(month_column=month_feature), [month_feature]),
         ("indicators", "passthrough", indicators)
     ]
 )
@@ -80,9 +69,6 @@ preprocessor_lgbm = ColumnTransformer(
     transformers=[
         ("log_budget", LogTransformer(), ["budget"]),
         ("num", "passthrough", ["runtime", "year"] + count_features),
-        ("te", TargetEncoder(smoothing=10, min_samples_leaf=20), high_cardinality),
-        ("genres", ListOneHotEncoder(columns=list_features), list_features),
-        ("month", MonthToSeasonTransformer(month_column=month_feature), [month_feature]),
         ("indicators", "passthrough", indicators)
     ]
 )
@@ -97,7 +83,7 @@ X_test_lgbm = preprocessor_lgbm.transform(X_test)
 # Base models (NO hyperparameter tuning)
 glm_model = ElasticNet(
     alpha=1.0,
-    l1_ratio=1.0,
+    l1_ratio=0.5,
     max_iter=10000,
     random_state=42,
 )
@@ -106,7 +92,7 @@ lgbm_model = lgb.LGBMRegressor(
     objective="regression",
     n_estimators=5000,
     learning_rate=0.05,
-    random_state=42
+    random_state=42,
 )
 
 # Fit models
@@ -118,7 +104,7 @@ lgbm_model.fit(
     eval_set=[(X_test_lgbm, y_test)],
     eval_metric="mse",
     callbacks=[
-        early_stopping(stopping_rounds=20),
+        early_stopping(stopping_rounds=100),
         log_evaluation(100),
     ],
 )
@@ -136,23 +122,3 @@ r2_lgbm = r2_score(y_test, y_pred_lgbm)
 
 print(f"GLM  - MSE: {mse_glm:.2f}, R²: {r2_glm:.3f}")
 print(f"LGBM - MSE: {mse_lgbm:.2f}, R²: {r2_lgbm:.3f}")
-
-# Save or replace predictions in test DataFrame
-
-if 'pred_glm' in df_test.columns:
-    df_test['pred_glm'] = y_pred_glm  # replace existing
-else:
-    df_test['pred_glm'] = y_pred_glm  # create new column
-
-if 'pred_lgbm' in df_test.columns:
-    df_test['pred_lgbm'] = y_pred_lgbm
-else:
-    df_test['pred_lgbm'] = y_pred_lgbm
-
-
-# Save the test DataFrame with predictions for evaluation
-
-project_root = Path(__file__).resolve().parents[1]
-output_path = project_root / "d100project" / "evaluation" / "df_test_with_untuned_predictions.parquet"
-df_test.to_parquet(output_path, index=False)
-print(f"Saved test set with predictions to {output_path}")

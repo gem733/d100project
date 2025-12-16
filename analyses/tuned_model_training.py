@@ -116,15 +116,15 @@ GLM_pipeline = ElasticNet(max_iter=10000)
 # Hyperparameter grid for GLM
 glm_param_grid = {
     'alpha': [0.01, 0.1, 1.0, 10.0],
-    'l1_ratio': [0.0, 0.5, 1.0]  # 0=Ridge, 1=Lasso
+    'l1_ratio': [0.0, 0.25, 0.5, 0.75, 1.0] 
 }
 
 
 # Hyperparameter grid for LightGBM
 lgb_param_grid = {
     'learning_rate': [0.01, 0.05, 0.1],
-    'n_estimators': [100, 500, 5000],
-    'num_leaves': [31, 50],
+    'n_estimators': [5000, 10000],
+    'num_leaves': [15, 31],
     'min_child_weight': [1, 5]
 }
 
@@ -138,17 +138,15 @@ glm_search = GridSearchCV(
 )
 
 # LightGBM
-LGBM_pipeline = lgb.LGBMRegressor(objective='regression', n_estimators=5000)
+LGBM_pipeline = lgb.LGBMRegressor(objective='regression', n_estimators=5000, random_state=42)
 
 # LGBM hyperparameter tuning
 
-lgb_search = RandomizedSearchCV(
+lgb_search = GridSearchCV(
     estimator=LGBM_pipeline,
-    param_distributions=lgb_param_grid,
-    cv=3,
+    param_grid=lgb_param_grid,
+    cv=5,
     scoring="neg_mean_squared_error",
-    n_iter=10,
-    verbose=2,
     n_jobs=-1
 )
 
@@ -164,7 +162,7 @@ lgb_search.fit(
     eval_set=[(X_test_lgbm, y_test)],
     eval_metric="mse",
     callbacks=[
-        early_stopping(stopping_rounds=100),
+        early_stopping(stopping_rounds=20),
         log_evaluation(100)
     ]
 )
@@ -188,6 +186,19 @@ r2_lgbm = r2_score(y_test, y_pred_LGBM)
 
 print(f"GLM - MSE: {mse_glm:.2f}, R^2: {r2_glm:.3f}")
 print(f"LGBM - MSE: {mse_lgbm:.2f}, R^2: {r2_lgbm:.3f}")
+
+# hyperparameters
+
+def report_search_results(name, search):
+    print(f"\n{name} RESULTS")
+    print("-" * 40)
+    print("Best hyperparameters:")
+    for k, v in search.best_params_.items():
+        print(f"  {k}: {v}")
+    print(f"Best CV MSE: {-search.best_score_:.4f}")
+
+report_search_results("GLM", glm_search)
+report_search_results("LGBM", lgb_search)
 
 
 # Save or replace predictions in test DataFrame
