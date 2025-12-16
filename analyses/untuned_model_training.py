@@ -48,6 +48,7 @@ count_features = [
     "n_spoken_languages",
 ]
 month_feature = "month"
+indicators = ['runtime_was_missing', 'budget_was_missing']
 
 all_features = (
     numeric_features
@@ -55,6 +56,7 @@ all_features = (
     + [month_feature]
     + high_cardinality
     + count_features
+    + indicators
 )
 
 X_train = df_train[all_features]
@@ -70,6 +72,7 @@ preprocessor = ColumnTransformer(
         ("num", StandardScaler(), ["runtime", "year"]),
         ("genres", ListOneHotEncoder(columns=list_features), list_features),
         ("month", MonthToSeasonTransformer(month_column=month_feature), [month_feature]),
+        ("indicators", "passthrough", indicators)
     ]
 )
 
@@ -80,6 +83,7 @@ preprocessor_lgbm = ColumnTransformer(
         ("te", TargetEncoder(smoothing=10, min_samples_leaf=20), high_cardinality),
         ("genres", ListOneHotEncoder(columns=list_features), list_features),
         ("month", MonthToSeasonTransformer(month_column=month_feature), [month_feature]),
+        ("indicators", "passthrough", indicators)
     ]
 )
 

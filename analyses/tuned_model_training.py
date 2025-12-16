@@ -47,8 +47,9 @@ list_features = ["genres_list"]  # OHE only for genres
 high_cardinality = ["original_language"]  # target encoding
 count_features = ["n_production_companies", "n_production_countries", "n_spoken_languages"]
 month_feature = "month"
+indicators = ['runtime_was_missing', 'budget_was_missing']
 
-all_features = numeric_features + list_features + [month_feature] + high_cardinality + count_features
+all_features = numeric_features + list_features + [month_feature] + high_cardinality + count_features + indicators
 
 
 # split into X and y, and train/test
@@ -80,7 +81,8 @@ preprocessor = ColumnTransformer(
         ('log_numeric', LogTransformer(), ['budget']),
         ('num', StandardScaler(), ['runtime','year']),
         ('list', ListOneHotEncoder(columns=list_features), list_features),
-        ('month', MonthToSeasonTransformer(month_column=month_feature), [month_feature])
+        ('month', MonthToSeasonTransformer(month_column=month_feature), [month_feature]),
+        ("indicators", "passthrough", indicators)
     ]
 )
 
@@ -90,7 +92,8 @@ preprocessor_lgbm = ColumnTransformer(
         ("num", "passthrough", ["runtime", "year"] + count_features),
         ("te", TargetEncoder(smoothing=10, min_samples_leaf=20), ["original_language"]),
         ("genres", ListOneHotEncoder(columns=list_features), ["genres_list"]),
-        ("month", MonthToSeasonTransformer(month_column="month"), [month_feature])
+        ("month", MonthToSeasonTransformer(month_column="month"), [month_feature]),
+        ("indicators", "passthrough", indicators)
     ]
 )
 
