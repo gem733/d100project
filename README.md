@@ -9,6 +9,8 @@ Create and activate Conda environment:
 conda env create -f environment.yml
 conda activate d100_project_movies_ds_env
 
+This is also the kernel for Jupyter Notebooks
+
 I've used a kaggle dataset. Given it's relatively small size (roughly 20x5000), the easiest way to access this it to put the dataframe within the data folder.
 
 Exploratory data analysis is in eda_cleaning.ipynb
