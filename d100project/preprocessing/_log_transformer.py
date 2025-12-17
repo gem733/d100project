@@ -2,6 +2,10 @@ from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
 
 class LogTransformer(BaseEstimator, TransformerMixin):
+    """
+    Transformer that converts transforms a number using the natural log
+    """
+        
     def __init__(self):
         pass  # no columns, ColumnTransformer passes selected columns
 
