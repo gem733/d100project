@@ -56,4 +56,4 @@ class ListOneHotEncoder(BaseEstimator, TransformerMixin):
             X = pd.concat([X] + all_dummies, axis=1)
         
         X.drop(columns=self.columns, inplace=True)
-        return X
+        return X.values

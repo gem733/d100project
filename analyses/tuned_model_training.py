@@ -73,6 +73,9 @@ list_transformer = Pipeline(steps=[
 month_transformer = Pipeline(steps=[
     ('month_to_season', MonthToSeasonTransformer(month_column=month_feature))
 ])
+te_transformer = Pipeline([
+    ("te", TargetEncoder(smoothing=10, min_samples_leaf=20))
+])
 
 # Preprocessors
 
@@ -88,11 +91,11 @@ preprocessor = ColumnTransformer(
 
 preprocessor_lgbm = ColumnTransformer(
     transformers=[
-        ("log_budget", Pipeline([("log", LogTransformer())]), ["budget"]),
+        ("log_budget", LogTransformer(), ["budget"]),
         ("num", "passthrough", ["runtime", "year"] + count_features),
         ("te", TargetEncoder(smoothing=10, min_samples_leaf=20), ["original_language"]),
         ("genres", ListOneHotEncoder(columns=list_features), ["genres_list"]),
-        ("month", MonthToSeasonTransformer(month_column="month"), [month_feature]),
+        ("month", MonthToSeasonTransformer(month_column=month_feature), [month_feature]),
         ("indicators", "passthrough", indicators)
     ]
 )
@@ -104,8 +107,7 @@ preprocessor.fit(X_train)
 X_train_transformed = preprocessor.transform(X_train)
 X_test_transformed = preprocessor.transform(X_test)
 
-preprocessor_lgbm.fit(X_train, y_train)
-X_train_lgbm = preprocessor_lgbm.transform(X_train)
+X_train_lgbm = preprocessor_lgbm.fit_transform(X_train, y_train)
 X_test_lgbm = preprocessor_lgbm.transform(X_test)
 
 # Create the model pipelines
