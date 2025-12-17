@@ -4,7 +4,7 @@ This project attempts to model and predict the revenue of films
 
 Create and activate Conda environment:
 
-# cd to whereever you've saved the repo then:
+# cd inside where you have saved this repo then:
 
 conda env create -f environment.yml
 conda activate d100_project_movies_ds_env
