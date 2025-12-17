@@ -73,3 +73,16 @@ def evaluate_predictions(
     return pd.DataFrame(evals, index=[0]).T
 
 
+# Source: https://scikit-learn.org/stable/auto_examples/linear_model/plot_tweedie_regression_insurance_claims.html
+def lorenz_curve(y_true, y_pred, exposure):
+    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
+    exposure = np.asarray(exposure)
+
+    # order samples by increasing predicted risk:
+    ranking = np.argsort(y_pred)
+    ranked_exposure = exposure[ranking]
+    ranked_pure_premium = y_true[ranking]
+    cumulated_claim_amount = np.cumsum(ranked_pure_premium * ranked_exposure)
+    cumulated_claim_amount /= cumulated_claim_amount[-1]
+    cumulated_samples = np.linspace(0, 1, len(cumulated_claim_amount))
+    return cumulated_samples, cumulated_claim_amount
