@@ -244,34 +244,41 @@ shap_values_glm = explainer_glm.shap_values(X_test_transformed)
 
 # Get feature names from the preprocessor so we can save them alongside SHAP values
 
-feature_names = preprocessor.get_feature_names_out()
+feature_names_glm = preprocessor.get_feature_names_out()
 
-
+expected_value_glm = explainer_glm.expected_value
 # Save SHAP values along with feature names
 np.save(
-    shap_output_folder / "shap_values_glm_with_names.npy",
-    {"shap_values": shap_values_glm, "feature_names": feature_names}
+    shap_output_folder / "shap_glm_bundle.npy",
+    {
+        "shap_values": shap_values_glm,
+        "expected_value": expected_value_glm,
+        "feature_names": feature_names_glm,
+        "X_test": X_test_transformed
+    },
+    allow_pickle=True
 )
 
-print(f"GLM SHAP values with feature names saved to {shap_output_folder / 'shap_values_glm_with_names.npy'}")
+print("GLM SHAP values with feature names saved.")
 
-
-# SHAP values computation for LGBM
 explainer_lgbm = shap.TreeExplainer(lgb_search.best_estimator_)
 
 shap_values_lgbm = explainer_lgbm.shap_values(X_test_lgbm)
 
-# Feature names from LGBM preprocessor
 feature_names_lgbm = preprocessor_lgbm.get_feature_names_out()
 
+expected_value_lgbm = explainer_lgbm.expected_value
+
 np.save(
-    shap_output_folder / "shap_values_lgbm_with_names.npy",
+    shap_output_folder / "shap_lgbm_bundle.npy",
     {
         "shap_values": shap_values_lgbm,
-        "feature_names": feature_names_lgbm
-    }
+        "expected_value": expected_value_lgbm,
+        "feature_names": feature_names_lgbm,
+        "X_test": X_test_lgbm
+    },
+    allow_pickle=True
 )
-
 print("LGBM SHAP values with feature names saved.")
 
 
